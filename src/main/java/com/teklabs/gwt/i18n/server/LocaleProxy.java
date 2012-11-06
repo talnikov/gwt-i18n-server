@@ -103,7 +103,7 @@ public abstract class LocaleProxy implements InvocationHandler {
 
     private Properties loadBundle(Class clazz, String locale) {
         InputStream stream = getClassLoader().getResourceAsStream(clazz.getCanonicalName().replace('.', '/') + (locale == null ? "" : "_" + locale) + ".properties");
-        Properties props = new Properties();
+        Properties props = createBundleProperties(clazz);
 
         if (stream != null) {
             try {
@@ -114,6 +114,10 @@ public abstract class LocaleProxy implements InvocationHandler {
         }
 
         return props;
+    }
+
+    protected Properties createBundleProperties(Class<? extends LocalizableResource> clazz) {
+        return new Properties();
     }
 
     private void loadBundles(Locale locale) {
