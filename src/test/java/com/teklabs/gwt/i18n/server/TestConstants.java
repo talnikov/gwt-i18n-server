@@ -19,6 +19,4 @@ public interface TestConstants extends ConstantsWithLookup {
             "a", "b"
     })
     Map<String, String> map();
-
-    String key1();
 }

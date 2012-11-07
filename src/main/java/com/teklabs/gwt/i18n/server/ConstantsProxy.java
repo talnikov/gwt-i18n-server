@@ -20,6 +20,29 @@ public class ConstantsProxy extends LocaleProxy {
         super(cls, log);
     }
 
+    protected static Object cast(String value, Class target, Properties properties) {
+        if (target.isAssignableFrom(Boolean.TYPE) || target.isAssignableFrom(Boolean.class)) {
+            return Boolean.valueOf(value);
+        } else if (target.isAssignableFrom(Double.TYPE) || target.isAssignableFrom(Double.class)) {
+            return Double.valueOf(value);
+        } else if (target.isAssignableFrom(Float.TYPE) || target.isAssignableFrom(Float.class)) {
+            return Float.valueOf(value);
+        } else if (target.isAssignableFrom(Integer.TYPE) || target.isAssignableFrom(Integer.class)) {
+            return Integer.valueOf(value);
+        } else if (target.isArray() && target.getComponentType().isAssignableFrom(String.class)) {
+            return value.split("\\s*(?<!\\\\),\\s*");
+        } else if (target.isAssignableFrom(Map.class)) {
+            String[] keys = value.split("\\s*(?<!\\\\),\\s*");
+            Map<String, String> map = new HashMap<String, String>();
+            for (String key : keys) {
+                map.put(key, properties.getProperty(key));
+            }
+            return map;
+        } else {
+            return value;
+        }
+    }
+
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         ConstantDescriptor desc = getDescriptor(method);
@@ -27,10 +50,7 @@ public class ConstantsProxy extends LocaleProxy {
 
         Object returnValue;
         if (properties.containsKey(desc.key)) {
-            returnValue = properties.get(desc.key);
-            if (returnValue == null) {
-                returnValue = properties.getProperty(desc.key); // redirect to defaults
-            }
+            returnValue = cast(properties.getProperty(desc.key), method.getReturnType(), properties);
         } else {
             if (desc.defaultValue == null) {
                 log.error(String.format("Unlocalized key '%s' for locale '%s'", desc.key, getLocale()));
@@ -47,11 +67,6 @@ public class ConstantsProxy extends LocaleProxy {
         }
 
         return returnValue;
-    }
-
-    @Override
-    protected Properties createBundleProperties(final Class<? extends LocalizableResource> clazz) {
-        return new ConstantsProperties(clazz);
     }
 
     private synchronized ConstantDescriptor getDescriptor(Method method) {
